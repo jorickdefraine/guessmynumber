@@ -108,5 +108,77 @@ def main():
         test(network, test_loader, test_losses)
 
 
+# Process our image
+def process_image(image_path):
+    # Load Image
+    img = Image.open(image_path)
+
+    # Get the dimensions of the image
+    width, height = img.size
+
+    # Resize by keeping the aspect ratio, but changing the dimension
+    # so the shortest size is 255px
+    img = img.resize((28, int(28 * (height / width))) if width < height else (int(28 * (width / height)), 28))
+
+    # Get the dimensions of the new image size
+    width, height = img.size
+
+    # Set the coordinates to do a center crop of 28 x 28
+    left = (width - 28) / 2
+    top = (height - 28) / 2
+    right = (width + 28) / 2
+    bottom = (height + 28) / 2
+    img = img.crop((left, top, right, bottom))
+
+    # Turn image into numpy array
+    img = np.array(img)
+
+    # Make the color channel dimension first instead of last
+    img = img.transpose((2, 0, 1))
+
+    # Make all values between 0 and 1
+    img = img / 28
+
+    # Normalize based on the preset mean and standard deviation
+    img[0] = (img[0] - 0.1307) / 0.3081
+    img[1] = (img[1] - 0.1307) / 0.3081
+    img[2] = (img[2] - 0.1307) / 0.3081
+
+    # Add a fourth dimension to the beginning to indicate batch size
+    img = img[np.newaxis, :]
+
+    # Turn into a torch tensor
+    image = torch.from_numpy(img)
+    image = image.float()
+    return image
+
+
+def predict(image, network):
+    network.eval()
+    # Pass the image through our model
+    output = network(image)
+
+    # Reverse the log function in our output
+    output = torch.exp(output)
+
+    # Get the top predicted class, and the output percentage for
+    # that class
+    probs, classes = output.topk(1, dim=1)
+    return probs.item(), classes.item()
+
+# Show Image
+def show_image(image):
+    # Convert image to numpy
+    image = image.numpy()
+
+    # Un-normalize the image
+    image[0] = image[0] * 0.3081 + 0.1307
+
+    # Print the image
+    fig = plt.figure(figsize=(25, 4))
+    plt.imshow(np.transpose(image[0], (1, 2, 0)))
+
 if __name__ == '__main__':
-    main()
+    image = process_image("image.png")
+    network_state_dict = Net()
+    top_prob, top_class = predict(image, network_state_dict)
