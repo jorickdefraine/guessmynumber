@@ -166,19 +166,36 @@ def predict(image, network):
     probs, classes = output.topk(1, dim=1)
     return probs.item(), classes.item()
 
+
 # Show Image
 def show_image(image):
     # Convert image to numpy
     image = image.numpy()
-
     # Un-normalize the image
     image[0] = image[0] * 0.3081 + 0.1307
-
     # Print the image
-    fig = plt.figure(figsize=(25, 4))
+    plt.figure(figsize=(25, 4))
     plt.imshow(np.transpose(image[0], (1, 2, 0)))
 
+
 if __name__ == '__main__':
-    image = process_image("image.png")
-    network_state_dict = Net()
-    top_prob, top_class = predict(image, network_state_dict)
+    # main()
+    #image = process_image("image.png")
+    # top_prob, top_class = predict(image, network_state_dict)
+    # network_state_dict.load_state_dict(torch.load('./results/model.pt'))
+    model = Net()
+    model.load_state_dict(torch.load('./results/model.pth'))
+    transform = torchvision.transforms.Compose([
+        torchvision.transforms.RandomHorizontalFlip(),
+        torchvision.transforms.Resize(28),
+        torchvision.transforms.CenterCrop(28),
+        torchvision.transforms.ToTensor(),
+        torchvision.transforms.Normalize((0.1307, 0.1307, 0.1307), (0.3081, 0.3081, 0.3081))
+    ])
+    image = Image.open('./data/examples/image.png')
+    input = transform(image)
+
+    input = input.view(1, 3, 28, 28)
+    output = model(input)
+    prediction = int(torch.max(output.data, 1)[1].numpy())
+    print(prediction)

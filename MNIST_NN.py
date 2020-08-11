@@ -141,6 +141,7 @@ def main():
         scheduler.step()
 
     test_counter = [i * len(train_loader.dataset) for i in range(epoch + 1)]
+    """
     plt.plot(train_return[1], train_return[0], color='blue')
     print("length of counter: ", len(test_counter), "length of losses: ", len(test_return))
     print("counter: ", test_counter, "losses: ", test_return)
@@ -149,6 +150,7 @@ def main():
     plt.xlabel('number of training examples seen')
     plt.ylabel('negative log likelihood loss')
     plt.show()
+    """
 
     if args.save_model:
         torch.save(model.state_dict(), "mnist_cnn.pt")
