@@ -2,6 +2,7 @@ import torch
 import torchvision
 import torchvision.datasets as datasets
 import matplotlib.pyplot as plt
+import matplotlib.image as mpimg
 import torch.nn as nn
 import torch.nn.functional as F
 import torch.optim as optim
@@ -26,7 +27,7 @@ class Net(nn.Module):
         x = F.relu(self.fc1(x))
         x = F.dropout(x, training=self.training)
         x = self.fc2(x)
-        return F.log_softmax(x)
+        return F.log_softmax(x, dim=1)
 
 
 def train(network, train_loader, optimizer, epoch, train_losses, train_counter, log_interval):
@@ -111,11 +112,10 @@ def main():
 # Process our image
 def process_image(image_path):
     # Load Image
-    img = Image.open(image_path)
+    img = Image.open(image_path).convert('1')
 
     # Get the dimensions of the image
     width, height = img.size
-
     # Resize by keeping the aspect ratio, but changing the dimension
     # so the shortest size is 255px
     img = img.resize((28, int(28 * (height / width))) if width < height else (int(28 * (width / height)), 28))
@@ -134,7 +134,7 @@ def process_image(image_path):
     img = np.array(img)
 
     # Make the color channel dimension first instead of last
-    img = img.transpose((2, 0, 1))
+    img = img.transpose((0, 1))
 
     # Make all values between 0 and 1
     img = img / 28
@@ -142,11 +142,11 @@ def process_image(image_path):
     # Normalize based on the preset mean and standard deviation
     img[0] = (img[0] - 0.1307) / 0.3081
     img[1] = (img[1] - 0.1307) / 0.3081
-    img[2] = (img[2] - 0.1307) / 0.3081
+    #img[2] = (img[2] - 0.1307) / 0.3081
 
     # Add a fourth dimension to the beginning to indicate batch size
-    img = img[np.newaxis, :]
-
+    #img = img[np.newaxis, :]
+    img = img[np.newaxis, np.newaxis, :]
     # Turn into a torch tensor
     image = torch.from_numpy(img)
     image = image.float()
@@ -154,7 +154,8 @@ def process_image(image_path):
 
 
 def predict(image, network):
-    network.eval()
+    network = network.eval()
+
     # Pass the image through our model
     output = network(image)
 
@@ -166,36 +167,18 @@ def predict(image, network):
     probs, classes = output.topk(1, dim=1)
     return probs.item(), classes.item()
 
-
-# Show Image
-def show_image(image):
-    # Convert image to numpy
-    image = image.numpy()
-    # Un-normalize the image
-    image[0] = image[0] * 0.3081 + 0.1307
-    # Print the image
-    plt.figure(figsize=(25, 4))
-    plt.imshow(np.transpose(image[0], (1, 2, 0)))
-
-
 if __name__ == '__main__':
-    # main()
-    #image = process_image("image.png")
-    # top_prob, top_class = predict(image, network_state_dict)
-    # network_state_dict.load_state_dict(torch.load('./results/model.pt'))
-    model = Net()
-    model.load_state_dict(torch.load('./results/model.pth'))
-    transform = torchvision.transforms.Compose([
-        torchvision.transforms.RandomHorizontalFlip(),
-        torchvision.transforms.Resize(28),
-        torchvision.transforms.CenterCrop(28),
-        torchvision.transforms.ToTensor(),
-        torchvision.transforms.Normalize((0.1307, 0.1307, 0.1307), (0.3081, 0.3081, 0.3081))
-    ])
-    image = Image.open('./data/examples/image.png')
-    input = transform(image)
+    #main()
+    image_path = "./data/examples/image.png"
+    image = process_image(image_path)
+    network = Net()
+    print(image.shape)
+    network.load_state_dict(torch.load('./results/model.pth'))
+    top_prob, top_class = predict(image, network)
+    print(top_prob, top_class)
+    #model = Net()
+    #model.load_state_dict(torch.load('./results/model.pth'))
 
-    input = input.view(1, 3, 28, 28)
-    output = model(input)
-    prediction = int(torch.max(output.data, 1)[1].numpy())
-    print(prediction)
+    #output = model(input)
+    #prediction = int(torch.max(output.data, 1)[1].numpy())
+    #print(prediction)

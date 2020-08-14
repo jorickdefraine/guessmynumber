@@ -9,7 +9,7 @@ from keras.models import Sequential
 from keras.layers import Dense
 from keras.layers import Dropout
 from keras.layers import Flatten
-from keras.layers.convolutional import Convolution2D
+from keras.layers.convolutional import Convolution2D, Conv2D
 from keras.layers.convolutional import MaxPooling2D
 from keras.utils import to_categorical
 from keras import backend as K
@@ -47,8 +47,8 @@ X_test = X_test / 255
 def create_model():
     num_classes = 10
     model = Sequential()
-    model.add(Convolution2D(32, kernel_size=(3, 3), activation='relu', input_shape=(28, 28, 1)))
-    model.add(Convolution2D(64, (3, 3), activation='relu'))
+    model.add(Conv2D(32, kernel_size=(3, 3), activation='relu', input_shape=(28, 28, 1)))
+    model.add(Conv2D(64, (3, 3), activation='relu'))
     model.add(MaxPooling2D(pool_size=(2, 2)))
     model.add(Dropout(0.25))
     model.add(Flatten())
@@ -63,7 +63,7 @@ model = create_model()
 # 4. Train the model
 
 #fit the model
-model.fit(X_train, y_train, validation_data=(X_test, y_test), epochs=2, batch_size=200, verbose=2)
+model.fit(X_train, y_train, validation_data=(X_test, y_test), epochs=1, batch_size=200, verbose=2)
 print("The model has successfully trained")
 
 #Save the model
